@@ -1,12 +1,46 @@
+<p align='center'>
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
+  </a>
+  <a href="https://www.postgresql.org/">
+    <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white"/>
+  </a>
+</p>
 <img src="readme_asset/freepik_hero_image.jpeg" alt="People looking at documents" style="zoom: 67%;" />
 
 # Project Hourly Branch Salaries
 
 Author: Ivan Budianto
 
+<div id="toc">
+
 **Table of Contents**
 
-[TOC]
+[Project Hourly Branch Salaries](#project-hourly-branch-salaries)  
+ **[I. Project Overview](#i-project-overview)**  
+  [Dataset(s) currently on possesion](#datasets-currently-on-possesion)  
+   [1. Employees](#1-employees)  
+   [2. Timesheets](#2-timesheets)  
+  [Objective](#objective)   
+
+  **[II. Assumptions, Limitations, and Edge Cases](#ii-assumptions-limitations-and-edge-cases)**  
+
+ **[ III. Solution & Result Overview](#iii-solution--result-overview)**  
+  [a. Full-snapshot SQL script](#a-full-snapshot-sql-script)  
+  [b. Incremental Ingestion Python script](#b-incremental-ingestion-python-script)  
+
+  **[IV. Solution & Result Logic Detail - Full-snapshot SQL script](#iv-solution--result-logic-detail---full-snapshot-sql-script)**  
+  [1. Create staging tables (employees_staging and timesheet_staging) to store data from CSV](#1-create-staging-tables-employeesstaging-and-timesheetstaging-to-store-data-from-csv)  
+  [2. Cleanse data from staging tables (deduplication and casting process)](#2-cleanse-data-from-staging-tables-deduplication-and-casting-process)  
+  [3. Create hourly_branch_salaries as the result table by combining CTEs and subquery](#3-create-hourlybranchsalaries-as-the-result-table-by-combining-ctes-and-subquery)  
+
+**[  V. Solution & Result Logic Detail - Incremental Ingestion Python script](#v-solution--result-logic-detail---incremental-ingestion-python-script)**  
+  [1. Prepare environmental requirements to run the script cleanly (Airflow-inspired scripts)](#1-prepare-environmental-requirements-to-run-the-script-cleanly-airflow-inspired-scripts)  
+  [2. Connect the script to the SQLAlchemy Postgres engine](#2-connect-the-script-to-the-sqlalchemy-postgres-engine)  
+  [3. Create the incremental ingestion logic using Pandas](#3-create-the-incremental-ingestion-logic-using-pandas)  
+  [4. Update hourly_branch_salaries](#4-update-hourlybranchsalaries)
+
+
 
 ## I. Project Overview
 
@@ -24,11 +58,11 @@ For E.g. assuming Branch A has 5 people working for it in January; the salary fo
 
 ### Dataset(s) currently on possesion
 
-You hand down 2 CSVs on your possesion related to the task you've given - **employees and timesheets.** This table shows the dataset breakdown.
+You hand down 2 CSVs on your possesion related to the task you've given - **`employees` and `timesheets`.** This table shows the dataset breakdown.
 
 #### **1. Employees**
 
-Data of the employees. This will be the **dimension table** for the task.
+Data of the `employees`. This will be the **dimension table** for the task.
 
 | No   | Column Name | Datatype | Short Description                                            |
 | :--- | :---------- | :------- | :----------------------------------------------------------- |
@@ -40,7 +74,7 @@ Data of the employees. This will be the **dimension table** for the task.
 
 #### **2. Timesheets**
 
-Data of the timesheets of the employees. This will be the **fact table** for the task.
+Data of the `timesheets` of the employees. This will be the **fact table** for the task.
 
 | No   | Column Name  | Datatype | Short Description                                           |
 | :--- | :----------- | :------- | :---------------------------------------------------------- |
@@ -57,9 +91,9 @@ Data of the timesheets of the employees. This will be the **fact table** for the
 You ask Ivan to complete these objectives, that would be reported at the next part:
 
 1. **Full-snapshot SQL script [(in this folder)](/full_snapshot_sql)**  
-   - Create a schema and load each CSV file to employees and timesheets tables.
+   - Create a schema and load each CSV file to `employees` and `timesheets` tables.
    
-   - Write an SQL script that reads from employees and timesheets tables, transforms, and loads the destination table.
+   - Write an SQL script that reads from `employees` and `timesheets` tables, transforms, and loads the destination table.
    
 2. **Incremental Ingestion Python script (other scripts)**
    - Write a Python or Java code that reads from CSV files, transforms, and loads to the destination table.
@@ -149,7 +183,9 @@ This part would explain the detail of the part III.a with robust and detailed in
 
 ### 1. Create staging tables (employees_staging and timesheet_staging) to store data from CSV
 
-This mimics the **raw layer** behavior. At the ideal and real-world environment, I would propose to save the CSV raw files, stored in a "bucket" or cloud storage like GCP's GCS or AWS S3 in a date-partitioned folders. This would reserve the raw data on daily basis, so that any data loss would be able to be recovered fast, while maintaining the cost low compared to using a full PostgreSQL table for the raw layer.
+This mimics the **raw layer** behavior. At the ideal and real-world environment, I would propose to save the CSV raw files, stored in a **"bucket"** or cloud storage like **GCP's GCS or AWS S3** in a date-partitioned folders. This would **reserve the raw data on daily basis**, so that any data loss would be able to be recovered fast, while maintaining the cost low compared to using a full PostgreSQL table for the raw layer.
+
+
 
 ### 2. Cleanse data from staging tables (deduplication and casting process)
 
@@ -161,29 +197,29 @@ This mimics the process from raw layer to clean layer. During this process, I us
 | 2        | 1000        | 99        | 1.500.000     | 2024-10-21     | 2025-10-20     |
 | **1**    | **1000**    | **98**    | **2.500.000** | **2024-10-21** | **2025-10-20** |
 
-From 3 rows, we would pick the data with rank 1, as it was the last inserted row in the CSV with the same PK (employee_id). The other behaviour that would be seen in this step is datatype casting, but based on the data, I decided that a datatype casting was not needed as the data was clean enough. The data that passed this rank over process would be passed from *_staging table into the * table.
+From 3 rows, **we would pick the data with rank 1**, as it was the **last inserted row in the CSV** with the same PK (employee_id). The other behaviour that would be seen in this step is **datatype casting**, but based on the data, I decided that a datatype casting was not needed as the data was clean enough. The data that passed this rank over process would be passed from *_staging table into the * table.
+
+
 
 ### 3. Create hourly_branch_salaries as the result table by combining CTEs and subquery
 
-This mimics the process from clean layer into datamart layer. During this process, I used few CTEs and subqueries to create the destination table. The logic that I would use is shown as expression below:
+This **mimics the process from clean layer into datamart layer**. During this process, I used few CTEs and subqueries to create the destination table. The logic that I would use is shown as expression below:
 
 > **hourly_branch_salaries = SUM(monthly_employees_salary_in_that_branch) / SUM(total_hours_of_employees_in_that_month)**
 
 To get each element of the equation, below was the step taken:
 
-
-
 1. #### Employee hours (total_hours_of_employees_in_that_month)
 
-   Utilizing the date, I took the year and month. I will count the real working hour based on my assumption point (1) and point (2) by using combination of simple extract, sum, join, and group by. Left join was chosen instead of inner join as I would like to include employees that did not input any checkin and checkout into the branch hourly salary count. The join logic also looks for the active employees only (not including the resigned employees in the later months).
+   Utilizing the **date**, I took the **year and month**. I will count the real working hour based on my **assumption point (1) and point (2)** by using combination of simple extract, sum, join, and group by. Left join was chosen instead of inner join as I would like to include employees that did not input any checkin and checkout into the branch hourly salary count. The join logic also looks for the **active employees only** (not including the resigned employees in the later months).
 
 2. #### Branch salary (SUM(monthly_employees_salary_in_that_branch))
 
-   This is the most tricky part in the SQL. I use the combined date_range, date_series, employee_active_period, branch_salary to get every branchs' salaries. The date_range and data_series limit the branch salary data space by every month and year available in the **timesheets** table, and help the indexing process. Then, in the employee_active period, I took the employee active in that month (the one not resigning in the current month). In the last CTE, branch_salary, I combined the active employees, sum up and group them based on the branch, month, and year. I chose not to combine employees and timesheets because it would either end up counting the same employee salaries as one, or count them multiplically (if employee A has 4 timesheet, then his salary would be 4x the real value)
+   This is the most tricky part in the SQL. I use the combined **date_range, date_series, employee_active_period, branch_salary** to get every branchs' salaries. The **date_range** and **data_series** **limit the branch salary data space by every month and year available in the `timesheets` table**, and help the indexing process. Then, in the employee_active period, I took the **employee active in that month** (the one not resigning in the current month). In the last CTE, branch_salary, I combined the active employees, sum up and group them based on the branch, month, and year. **I chose not to combine `employees` and `timesheets`** because it would either end up counting the same employee salaries as one, or count them multiplically (if employee A has 4 timesheet, then his salary would be 4x the real value)
 
 3. #### Main query (hourly_branch_salaries)
 
-   Combine step 1 and 2 to get the base equation, join, and group by them. Coalesce is used to make sure that edge cases, like divided by 0 are covered in the query.
+   **Combine step 1 and 2 to get the base equation, join, and group by them**. Coalesce is used to make sure that edge cases, like divided by 0 are covered in the query.
 
 
 
@@ -205,7 +241,9 @@ As the scoring of this code challenge  also applies for the scheduler-applicable
 
 ### 2. Connect the script to the SQLAlchemy Postgres engine
 
-Incremental Ingestion means that traversion to the existing database is essential. Using SQLAlchemy, I tried to connect the local PostgreSQL to be used by Pandas. Pandas is chosen as it is the most versatile python data manipulation library. It is also able to give a hint how the pipeline would be should it be scaled in the future (i.e using PySpark).
+Incremental Ingestion **means that traversion to the existing database is essential**. Using SQLAlchemy, I tried to connect the local PostgreSQL to be used by **Pandas**. Pandas is chosen as it is the most versatile python data manipulation library. **It is also able to give a hint how the pipeline would be should it be scaled in the future (i.e using PySpark).**
+
+
 
 ### 3. Create the incremental ingestion logic using Pandas
 
@@ -213,15 +251,15 @@ By creating a method in the custom_operator to fit incremental ingestion logic, 
 
 - **New Records**
 
-  New records are defined as the records which was not exist in the existing database. I distinguish this records by the primary key column. If the primary key column was None/Null in the existing database, this means that the data are new, and are categorized as new records. These new records then will be appended into the database.
+  New records are defined as the **records which was not exist in the existing database**. I distinguish this records by the **primary key column**. If the **primary key column was None/Null in the existing database, this means that the data are new**, and are categorized as new records. These new records then will be appended into the database.
 
 - **Updated Records**
 
-  Differing from new records, updated records refers to same primary key value, but different non-primary key value (i.e. salary of an employee rises). This means that the primary key is retained, but is updated using SQL UPDATE logic.
+  Differing from new records, updated records **refers to same primary key value, but different non-primary key value** (i.e. salary of an employee rises). This means that the **primary key is retained, but is updated using SQL UPDATE logic.**
 
   
 
 ### 4. Update hourly_branch_salaries
 
-In this logic, it is the same as step (3). But, this step will not be executed if no changes were found in the employees and timesheets table to save and manage resources spent in this logic.
+In this logic, it is the same as step (3). **But, this step will not be executed if no changes were found in the `employees` and `timesheets` table** to save and manage resources spent in this logic.
 
