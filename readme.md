@@ -39,6 +39,7 @@ Author: Ivan Budianto
   [2. Connect the script to the SQLAlchemy Postgres engine](#2-connect-the-script-to-the-sqlalchemy-postgres-engine)  
   [3. Create the incremental ingestion logic using Pandas](#3-create-the-incremental-ingestion-logic-using-pandas)  
   [4. Update hourly_branch_salaries](#4-update-hourlybranchsalaries)
+</div>
 
 
 
