@@ -64,12 +64,12 @@ You hand down 2 CSVs on your possesion related to the task you've given - **`emp
 
 Data of the `employees`. This will be the **dimension table** for the task.
 
-| No   | Column Name | Datatype | Short Description                                            |
-| :--- | :---------- | :------- | :----------------------------------------------------------- |
-| 1    | employee_id | Int64    | Unique ID of employees working in your company               |
-| 2    | branch_id   | Int64    | The branch which the employee currently  assigned at         |
-| 3    | salary      | Int64    | Salary of the employee in a monthly basis                    |
-| 4    | join_date   | Date     | The join date of the employee                                |
+| No   | Column Name | Datatype | Short Description                                                |
+| :--- | :---------- | :------- | :--------------------------------------------------------------- |
+| 1    | employee_id | Int64    | Unique ID of employees working in your company                   |
+| 2    | branch_id   | Int64    | The branch which the employee currently  assigned at             |
+| 3    | salary      | Int64    | Salary of the employee in a monthly basis                        |
+| 4    | join_date   | Date     | The join date of the employee                                    |
 | 5    | resign_date | Date     | The resign date of the employee (Null if still actively working) |
 
 #### **2. Timesheets**
