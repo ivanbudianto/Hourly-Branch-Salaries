@@ -1,3 +1,4 @@
+-- Deduplicate the employees table by its ctid.
 DROP TABLE IF EXISTS employees;
 CREATE TABLE employees as (
 SELECT 
@@ -13,13 +14,13 @@ FROM (
         salary,
         join_date,
         resign_date,
-        ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY ctid DESC) AS rn
+        ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY ctid DESC) AS rn -- Rank over by CTID
     FROM employees_staging es 
 ) AS ranked_employees
 WHERE rn = 1
 );
 
-
+-- Deduplicate the timesheets table by its ctid.
 DROP TABLE IF EXISTS timesheets;
 CREATE TABLE timesheets as (
 SELECT 
@@ -35,7 +36,7 @@ FROM (
 		date,
 		checkin,
 		checkout,
-        ROW_NUMBER() OVER (PARTITION BY timesheet_id ORDER BY ctid DESC) AS rn
+        ROW_NUMBER() OVER (PARTITION BY timesheet_id ORDER BY ctid DESC) AS rn -- Rank over by CTID
     FROM timesheets_staging es 
 ) AS ranked_timesheets
 WHERE rn = 1
@@ -44,6 +45,7 @@ WHERE rn = 1
 
 DROP TABLE IF EXISTS hourly_branch_salaries;
 CREATE TABLE hourly_branch_salaries as (
+-- Get the total_hours_of_employees_in_that_month
 WITH employee_hours AS (
     SELECT 
         e.employee_id,
@@ -61,15 +63,17 @@ WITH employee_hours AS (
     LEFT JOIN timesheets t 
         ON e.employee_id = t.employee_id
         AND t.date >= e.join_date
-        AND (e.resign_date IS NULL OR t.date < e.resign_date)
+        AND (e.resign_date IS NULL OR t.date < e.resign_date) -- Active employees only
     GROUP BY e.employee_id, e.branch_id, year, month
 ),
+-- Limit the MIN and MAX year-month based on timesheets table
 date_range AS (
     SELECT 
         date_trunc('month', MIN(date)) AS start_date,
         date_trunc('month', MAX(date)) AS end_date
     FROM timesheets
 ),
+-- Get every year and month as series
 date_series AS (
     SELECT 
         generate_series(
@@ -78,6 +82,7 @@ date_series AS (
             '1 month'::interval
         )::date AS month_year
 ),
+-- Get the details of active employees in every year and month
 employee_active_period AS (
     SELECT 
         employee_id,
@@ -91,6 +96,7 @@ employee_active_period AS (
     FROM 
         employees
 ),
+-- Get the branchs' monthly salary
 branch_salary as (
 	SELECT 
 	    EXTRACT(YEAR FROM d.month_year) AS year,
@@ -106,13 +112,14 @@ branch_salary as (
 	GROUP BY 
 	    year, month, e.branch_id
     )
+-- Main query to count
 SELECT 
     eh.branch_id,
     eh.year,
     eh.month,
     bs.total_salary_per_month,
-    COALESCE(SUM(eh.total_hours_per_month), 0) AS total_hours_per_branch,
-    bs.total_salary_per_month / COALESCE(NULLIF(SUM(eh.total_hours_per_month), 0), 1) AS cost_per_hour
+    COALESCE(SUM(eh.total_hours_per_month), 0) AS total_hours_per_branch, -- Avoid division by 0
+    bs.total_salary_per_month / COALESCE(NULLIF(SUM(eh.total_hours_per_month), 0), 1) AS cost_per_hour -- Avoid division by 0
 FROM employee_hours eh
 JOIN branch_salary bs 
     ON eh.branch_id = bs.branch_id 

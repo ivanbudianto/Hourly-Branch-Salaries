@@ -5,6 +5,9 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 
 
+# Class used to access the secret.json.
+# The secret.json itself should be in .gitignore on the production-level.
+
 class SecretManager():
     """
     secret_db_id        : Determines which DB to use
@@ -27,11 +30,13 @@ class SecretManager():
 
 
     def access_secret_by_id(self):
+        # Load the secret.json file
         TOP_LEVEL_DIR     = os.path.dirname(os.path.abspath(__file__))
         secret_file_url = os.path.abspath(f"{TOP_LEVEL_DIR}/../../config/secret.json")
         with open(secret_file_url, 'r') as file:
             data = json.load(file)
 
+        # Traverse the JSON file to get the host, port, username, password, and dbname, and return the found values
         for item in data:
             if item["secret_db_id"] == self.secret_db_id:
                 self.host       = item["db_data"]["host"]

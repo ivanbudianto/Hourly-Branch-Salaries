@@ -1,11 +1,14 @@
 import os
 from custom_operator.hourly_branch_salaries import HourlyBranchSalaries
 
+# Define the constants
 TOP_LEVEL_DIR     = os.path.dirname(os.path.abspath(__file__))
 BASE_FILE_URL   = os.path.abspath(f"{TOP_LEVEL_DIR}/temp_files")
 SQL_PATH        = os.path.abspath(f"{TOP_LEVEL_DIR}/lib/datamart_sql")
 
+
 if __name__ == "__main__":
+    # Run the custom operator by instantiating it first
     d_1_hourly_branch_salaries_task = HourlyBranchSalaries(
                                         secret_db_id        = 'talenta_company_1',
                                         employees_table     = 'employees',
@@ -19,4 +22,5 @@ if __name__ == "__main__":
                                         sql_path            = f'{SQL_PATH}/hourly_branch_salaries.sql',
                                     )
     
+    # Execute the custom operator
     d_1_hourly_branch_salaries_task.execute()
